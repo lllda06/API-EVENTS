@@ -36,7 +36,7 @@ class EventListView(generics.ListAPIView):
         return Event.objects.filter(meeting_time__gte=now).order_by('meeting_time')
 
 #Подписаться / отписаться от события (APIView с POST и DELETE)
-class EventSubscribeView(generics.ListAPIView):
+class EventSubscribeView(generics.GenericAPIView):
     queryset = Event.objects.all()
     permission_classes = (IsAuthenticated,)
 

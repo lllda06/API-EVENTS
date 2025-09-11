@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'events_app',
-    'api',
+    'events_app.api',
 ]
 
 MIDDLEWARE = [

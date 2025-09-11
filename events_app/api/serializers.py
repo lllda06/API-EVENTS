@@ -32,9 +32,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 # сериализатор для событий без списка пользователей, которые подписались
 
 class EventSerializer(serializers.ModelSerializer):
+    users = UserSerializer(many=True, read_only=True)
     class Meta:
         model = Event
-        fields = ['id', 'name', 'meeting_time', 'description']
+        fields = ['id', 'name', 'meeting_time', 'description', 'users']
 
 #сериализатор для просмотра событий, на которые я подписана со списком пользователей, которые подписались
 class MyEventSerializer(serializers.ModelSerializer):
