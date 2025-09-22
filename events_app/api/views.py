@@ -10,20 +10,33 @@ from django.shortcuts import get_object_or_404
 from .serializers import RegisterSerializer, UserSerializer, EventSerializer, MyEventSerializer
 from events_app.models import Event
 from django.contrib.auth import get_user_model
-
+from .tasks import send_new_event_notification
+from django.core.cache import cache
+from django.contrib.auth import get_user_model
 User = get_user_model()
+
 
 #Регистрация пользователя
 class UserRegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    queryset = User.objects.all()
 
 #Список всех пользователей (только админам)
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminUser,)
+
+
+class EventCreateView(generics.CreateAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = (IsAdminUser,)  # только админ может создавать
+
+    def perform_create(self, serializer):
+        event = serializer.save()
+        send_new_event_notification.delay(event.id)
 
 #Список будущих событий
 class EventListView(generics.ListAPIView):
@@ -34,6 +47,15 @@ class EventListView(generics.ListAPIView):
     def get_queryset(self):
         now = timezone.now()
         return Event.objects.filter(meeting_time__gte=now).order_by('meeting_time')
+
+    def list(self, request, *args, **kwargs):
+        events = cache.get("all_events")
+        if not events:
+            now = timezone.now()
+            qs = Event.objects.filter(meeting_time__gte=now).order_by("meeting_time")
+            events = EventSerializer(qs, many=True).data
+            cache.set("all_events", events, timeout=300)  # 5 минут
+        return Response(events)
 
 #Подписаться / отписаться от события (APIView с POST и DELETE)
 class EventSubscribeView(generics.GenericAPIView):
@@ -67,3 +89,4 @@ class MyEventsView(generics.ListAPIView):
     def get_queryset(self):
         now = timezone.now()
         return self.request.user.events.filter(meeting_time__gt=now).order_by('meeting_time')
+

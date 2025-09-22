@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,10 @@ SECRET_KEY = 'django-insecure-tb+5-(j00xb3klnq=hk7!jcs&*ws35*b&dbvp^*^&duixdj%$4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -42,6 +46,8 @@ INSTALLED_APPS = [
     'events_app',
     'events_app.api',
 ]
+
+AUTH_USER_MODEL = "events_app.User"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -138,3 +144,12 @@ USE_L10N = True
 TIME_ZONE = 'Europe/Warsaw'
 
 
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/1"
+
+CELERY_BEAT_SCHEDULE = {
+    "check-events-every-15-minutes": {
+        "task": "api.check_events",
+        "schedule": crontab(minute="*/15"),  # каждые 15 минут
+    },
+}

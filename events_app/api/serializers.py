@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from events_app.models import User
 from events_app.models import Event
 
 
@@ -12,22 +12,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 # сериализатор для регистрации новых пользователей
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'password']
-
-    def create(self, validated_data, ):
-        # Создание пользователя через встроенный метод,
-        # чтобы пароль хранился в зашифрованном виде (хэш)
-        user = User.objects.create_user(
+    def create(self, validated_data):
+        return User.objects.create_user(
             username=validated_data['username'],
             email=validated_data.get('email'),
             password=validated_data['password']
         )
-        return user
 
 # сериализатор для событий без списка пользователей, которые подписались
 
